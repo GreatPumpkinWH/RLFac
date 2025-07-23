@@ -180,7 +180,6 @@ def main():
     
     # 运行超参数调优
     print("开始超参数调优...")
-    # 在tune.run()调用中添加metric和mode参数
     analysis = tune.run(
         train_grpo,  # 修复：使用正确的函数名
         config=search_space,
@@ -188,9 +187,8 @@ def main():
         num_samples=12,
         resources_per_trial={"cpu": 2, "gpu": 2},
         storage_path=os.path.abspath("./ray_results"),
-        name="grpo_ray_tune_minimal",
-        metric="validation_reward",  # 添加这一行
-        mode="max"                   # 添加这一行
+        name="grpo_ray_tune_minimal"
+        # 移除metric和mode参数，因为scheduler已配置
     )
     
     # 输出最佳配置
