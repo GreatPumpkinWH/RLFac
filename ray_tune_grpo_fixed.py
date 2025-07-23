@@ -107,10 +107,11 @@ def train_grpo(config):
         # 使用兼容的metric报告方式
         try:
             from ray import train
-            train.report({
-                "validation_reward": max(validation_reward, -10),
-                "training_loss": training_loss,
-                "trial_id": config.get('trial_id', 0)
+            # 使用ray.tune.report替代ray.train.report
+            tune.report({
+            "validation_reward": max(validation_reward, -10),
+            "training_loss": training_loss,
+            "trial_id": config.get('trial_id', 0)
             })
         except ImportError:
             # 兼容旧版本
@@ -192,14 +193,19 @@ def main():
     )
     
     # 输出最佳配置
+    # 修复最佳结果获取方式
     print("\n" + "="*60)
     print("超参数调优完成！")
     print("="*60)
     
-    # 替换原来的best_result获取方式
+    # 使用get_best_trial获取最佳结果
     best_trial = analysis.get_best_trial(metric="validation_reward", mode="max")
-    best_config = best_trial.config
-    best_validation_reward = best_trial.last_result.get("validation_reward", "N/A")
+    if best_trial:
+        best_config = best_trial.config
+        best_validation_reward = best_trial.last_result.get("validation_reward", "N/A")
+    else:
+        best_config = {}
+        best_validation_reward = "N/A"
     
     print(f"最佳验证奖励: {best_validation_reward}")
     print(f"最佳配置: {best_config}")
@@ -213,9 +219,13 @@ def main():
     # 生成使用最佳配置的脚本
     generate_best_config_script(best_config)
     
-    # 打印统计信息
+    # 打印统计信息 - 修复这一行
     print(f"\n总共运行试验: {len(analysis.results_df)}")
-    print(f"最佳验证奖励: {analysis.best_result.get('validation_reward', 'N/A')}")
+    # 移除或修复这一行
+    if hasattr(analysis, 'best_result') and analysis.best_result:
+        print(f"最佳验证奖励: {analysis.best_result.get('validation_reward', 'N/A')}")
+    else:
+        print(f"最佳验证奖励: {best_validation_reward}")
     
     # 关闭Ray
     ray.shutdown()
