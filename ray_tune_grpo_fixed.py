@@ -57,7 +57,7 @@ def train_grpo(config):
         "trainer.logger=['wandb']",
         "trainer.project_name='GRPO_ray_tune_fixed'",
         f"trainer.experiment_name=trial_{config.get('trial_id', 0)}",
-        "trainer.total_training_steps=200",  # 减少训练步数
+        "trainer.total_training_steps=400",  # 减少训练步数
         "trainer.save_freq=50",
         "trainer.test_freq=25"
     ]
@@ -180,22 +180,17 @@ def main():
     
     # 运行超参数调优
     print("开始超参数调优...")
+    # 在tune.run()调用中添加metric和mode参数
     analysis = tune.run(
-        train_grpo,
+        train_fn,
         config=search_space,
+        scheduler=asha_scheduler,
         num_samples=12,
-        scheduler=scheduler,
-        search_alg=search_alg,
-        resources_per_trial={
-            "cpu": 2,
-            "gpu": 2
-        },
-        storage_path=os.path.abspath("./ray_results"),  # 使用绝对路径
+        resources_per_trial={"cpu": 2, "gpu": 2},
+        storage_path=os.path.abspath("./ray_results"),
         name="grpo_ray_tune_minimal",
-        verbose=1,
-        fail_fast=False,
-        max_concurrent_trials=1,
-        stop={"training_iteration": 200}
+        metric="validation_reward",  # 添加这一行
+        mode="max"                   # 添加这一行
     )
     
     # 输出最佳配置
@@ -203,7 +198,13 @@ def main():
     print("超参数调优完成！")
     print("="*60)
     
-    best_config = analysis.get_best_config(metric="validation_reward", mode="max")
+    # 替换原来的best_result获取方式
+    best_trial = analysis.get_best_trial(metric="validation_reward", mode="max")
+    best_config = best_trial.config
+    best_validation_reward = best_trial.last_result.get("validation_reward", "N/A")
+    
+    print(f"最佳验证奖励: {best_validation_reward}")
+    print(f"最佳配置: {best_config}")
     print("最佳超参数配置:")
     print(json.dumps(best_config, indent=2, ensure_ascii=False))
     
@@ -249,7 +250,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.kl_loss_coef={best_config.get('kl_loss_coef', 0.001)} \
     actor_rollout_ref.rollout.n={best_config.get('n_rollouts', 4)} \
     algorithm.kl_ctrl.kl_coef={best_config.get('kl_coef', 0.001)} \
-    trainer.total_training_steps=2000
+    trainer.total_training_steps=200
 
 echo "训练完成！"
 '''
