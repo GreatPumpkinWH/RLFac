@@ -157,14 +157,14 @@ def main():
     analysis = tune.run(
         train_grpo,
         config=search_space,
-        num_samples=12,  # 减少样本数量
+        num_samples=12,
         scheduler=scheduler,
         search_alg=search_alg,
         resources_per_trial={
             "cpu": 2,
             "gpu": 2
         },
-        storage_path="./ray_results",  # 将 local_dir 改为 storage_path
+        storage_path=os.path.abspath("./ray_results"),  # 使用绝对路径
         name="grpo_ray_tune_minimal",
         verbose=1,
         fail_fast=False,
