@@ -104,18 +104,44 @@ def train_grpo(config):
         if validation_reward <= -10:
             validation_reward = -training_loss
             
-        tune.report(
-            validation_reward=max(validation_reward, -10),  # 限制范围
-            training_loss=training_loss,
-            trial_id=config.get('trial_id', 0)
-        )
+        # 使用兼容的metric报告方式
+        try:
+            from ray import train
+            train.report({
+                "validation_reward": max(validation_reward, -10),
+                "training_loss": training_loss,
+                "trial_id": config.get('trial_id', 0)
+            })
+        except ImportError:
+            # 兼容旧版本
+            tune.report(
+                validation_reward=max(validation_reward, -10),
+                training_loss=training_loss,
+                trial_id=config.get('trial_id', 0)
+            )
         
     except subprocess.TimeoutExpired:
         logging.warning(f"Trial {config.get('trial_id', 0)} timed out")
-        tune.report(validation_reward=-5.0, training_loss=5.0)
+        try:
+            from ray import train
+            train.report({
+                "validation_reward": -5.0,
+                "training_loss": 5.0,
+                "trial_id": config.get('trial_id', 0)
+            })
+        except ImportError:
+            tune.report(validation_reward=-5.0, training_loss=5.0)
     except Exception as e:
         logging.error(f"Trial {config.get('trial_id', 0)} failed: {str(e)}")
-        tune.report(validation_reward=-5.0, training_loss=5.0)
+        try:
+            from ray import train
+            train.report({
+                "validation_reward": -5.0,
+                "training_loss": 5.0,
+                "trial_id": config.get('trial_id', 0)
+            })
+        except ImportError:
+            tune.report(validation_reward=-5.0, training_loss=5.0)
 
 def main():
     # 初始化Ray（简化配置）
