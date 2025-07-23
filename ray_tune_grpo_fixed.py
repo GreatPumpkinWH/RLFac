@@ -192,13 +192,13 @@ def main():
         # 移除metric和mode参数，因为scheduler已配置
     )
     
+    # 修复第225行附近的代码
     # 输出最佳配置
-    # 修复最佳结果获取方式
     print("\n" + "="*60)
     print("超参数调优完成！")
     print("="*60)
     
-    # 使用get_best_trial获取最佳结果
+    # 使用get_best_trial获取最佳结果 - 这是正确的Ray Tune API
     best_trial = analysis.get_best_trial(metric="validation_reward", mode="max")
     if best_trial:
         best_config = best_trial.config
@@ -207,6 +207,8 @@ def main():
         best_config = {}
         best_validation_reward = "N/A"
     
+    # 简化的统计信息输出
+    print(f"\n总共运行试验: {len(analysis.results_df)}")
     print(f"最佳验证奖励: {best_validation_reward}")
     print(f"最佳配置: {best_config}")
     print("最佳超参数配置:")
@@ -219,13 +221,9 @@ def main():
     # 生成使用最佳配置的脚本
     generate_best_config_script(best_config)
     
-    # 打印统计信息 - 修复这一行
+    # 修复第272行 - 只保留一次统计信息
     print(f"\n总共运行试验: {len(analysis.results_df)}")
-    # 移除或修复这一行
-    if hasattr(analysis, 'best_result') and analysis.best_result:
-        print(f"最佳验证奖励: {analysis.best_result.get('validation_reward', 'N/A')}")
-    else:
-        print(f"最佳验证奖励: {best_validation_reward}")
+    print(f"最佳验证奖励: {best_validation_reward}")
     
     # 关闭Ray
     ray.shutdown()
