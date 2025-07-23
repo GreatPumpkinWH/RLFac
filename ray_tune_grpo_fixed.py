@@ -182,9 +182,9 @@ def main():
     print("开始超参数调优...")
     # 在tune.run()调用中添加metric和mode参数
     analysis = tune.run(
-        train_fn,
+        train_grpo,  # 修复：使用正确的函数名
         config=search_space,
-        scheduler=asha_scheduler,
+        scheduler=scheduler,  # 修复：使用正确的变量名
         num_samples=12,
         resources_per_trial={"cpu": 2, "gpu": 2},
         storage_path=os.path.abspath("./ray_results"),
