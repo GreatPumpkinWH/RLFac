@@ -164,7 +164,7 @@ def main():
             "cpu": 2,
             "gpu": 2
         },
-        local_dir="./ray_results",
+        storage_path="./ray_results",  # 将 local_dir 改为 storage_path
         name="grpo_ray_tune_minimal",
         verbose=1,
         fail_fast=False,
